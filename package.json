@@ -2,9 +2,9 @@
   "name": "iot_efficom",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/main.ts",
   "scripts": {
-    "start": "tsc && node dist/main.js"
+    "start": "npx ts-node src/main.ts"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +15,7 @@
     "typescript-eslint": "^7.11.0"
   },
   "dependencies": {
+    "async-mqtt": "^2.6.3",
     "mongodb": "^6.7.0",
     "mongoose": "^8.4.0",
     "mqtt": "^5.7.0"

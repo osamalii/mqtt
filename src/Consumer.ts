@@ -1,48 +1,27 @@
-import * as mqtt from 'mqtt';
-import {QueueManager} from './QueueManager';
+import * as mqtt from "async-mqtt"
+import { QueueManager } from './QueueManager';
+import { PublishMessage, ManagingTopics } from '../index';
 
 export class Consumer {
-  private client: mqtt.MqttClient;
-  private topic: string;
-  private queueManager: QueueManager;
 
-  constructor(brokerUrl: string, topic: string, queueManager: QueueManager) {
-    this.client = mqtt.connect(brokerUrl);
-    this.topic = topic;
-    this.queueManager = queueManager;
+  constructor(private queueManager: QueueManager, private client: mqtt.IMqttClient) { 
+    this.managePublishRequests();
+  }
 
-    this.client.on('connect', () => {
-      this.client.subscribe(this.topic);
-    });
+  managePublishRequests() {
+    this.client.on('message', async (topic: ManagingTopics, message) => {
+      try {
 
-    this.client.on('message', async (topic, message) => {
-      if (topic === this.topic) {
-        const msg = message.toString();
-        // await this.queueManager.enqueueMessage(topic, { content: msg, acknowledged: false });
-        // this.processMessage({ content: msg });
+        if (topic === "PublishMessage") {
+          let messageJson: PublishMessage = JSON.parse(message.toString());
+          await this.queueManager.enqueueMessage(messageJson.topic, messageJson.content);
+        }
+
+      } catch (error) {
+
+        console.error(`Error in: managePublishRequests ${error}`);
+
       }
     });
   }
-
 }
-
-
-
-
-
-
-//   private async processMessage(message: any) {
-//     try {
-//       // Simulate message processing
-//       console.log(`Processing message: ${message.content}`);
-//       // Simulate acknowledgment
-//       setTimeout(async () => {
-//         message.acknowledged = true;
-//         console.log(`Acknowledged message: ${message.content}`);
-//         await this.queueManager.dequeueMessage(this.topic);
-//       }, 1000);
-//     } catch (error) {
-//       console.error(`Failed to process message: ${message.content}`);
-//       await this.queueManager.requeueMessage(this.topic, message);
-//     }
-//   }
