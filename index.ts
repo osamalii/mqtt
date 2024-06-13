@@ -1,7 +1,7 @@
 import { ObjectId } from "mongodb"
 
 export type Message = {
-    id: string;
+    _id: ObjectId;
     topic: string;
     timestamp: number;
     content: string;

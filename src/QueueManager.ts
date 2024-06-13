@@ -1,6 +1,7 @@
 import { DatabaseService } from './DatabaseService';
 import { Message } from '../index';
-import { ObjectId } from "mongodb"
+import { ObjectId } from "mongodb";
+
 export class QueueManager {
   private dbService: DatabaseService;
 
@@ -9,18 +10,33 @@ export class QueueManager {
   }
 
   async enqueueMessage(topic: string, messageContent: string) {
-    await this.dbService.insertMessage({ timestamp:Date.now(), topic:topic, content: messageContent, acknowledged:false, sent: false } as Message);
+    const message = {
+      timestamp: Date.now(),
+      topic: topic,
+      content: messageContent,
+      acknowledged: false,
+      sent: false
+    } as Message;
+
+    const result = await this.dbService.insertMessage(message);
+    console.log('Message inserted:', result);
   }
 
   async dequeueMessage(topic: string): Promise<Message | undefined> {
     const message = await this.dbService.getOldestMessageByTopic(topic);
-    await this.dbService.updateMessage(message.id, { sent: true });
+    if (message) {
+      await this.dbService.updateMessage(message._id, { sent: true });
+    }
     return message;
   }
 
-
   async requeueMessage(message: Message) {
     const oldestMessage = await this.dbService.getOldestMessageByTopic(message.topic);
-    await this.dbService.updateMessage(message.id, {timestamp: oldestMessage.timestamp - 1000, sent: false});
+    if (oldestMessage) {
+      await this.dbService.updateMessage(new ObjectId(message._id), {
+        timestamp: oldestMessage.timestamp - 1000,
+        sent: false
+      });
+    }
   }
 }

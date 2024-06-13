@@ -2,58 +2,68 @@ import * as mqtt from "async-mqtt"
 import { DatabaseService } from './DatabaseService';
 import { QueueManager } from './QueueManager'
 import { MessageAck, Message } from '../index';
+import { ObjectId } from "mongodb";
 
 export class Publisher {
-  
-  constructor(
-      private dbService: DatabaseService,
-      private queueManager: QueueManager,
-      private client: mqtt.IMqttClient
-    ) {
 
-      this.listenAcknowledgements();
-  }
+  private static dbService: DatabaseService;
+  private static queueManager: QueueManager;
+  private static client: mqtt.IMqttClient;
+
+  constructor() {}
 
   // Listen for client requests about topics and answer them with the messages available about the topic.
-  async manageClientRequest (){
-    
-    this.client.on('connect', () => {
-      this.client.subscribe('request');
-    });
+  public static async manageClientRequest(dbService: DatabaseService, queueManager: QueueManager, client: mqtt.IMqttClient): Promise<Publisher>{
+    console.log('Publisher started...');
 
-    this.client.on('message', async (topic, message) => {
+    Publisher.dbService = dbService;
+    Publisher.queueManager = queueManager;
+    Publisher.client = client;
+
+    await Publisher.listenAcknowledgements();
+    
+    await Publisher.client.subscribe('requestTopic');
+
+    await Publisher.client.on('message', async (topic, message) => {
       if (topic === 'requestTopic') {
-       this.publish(message.toString());
+        console.log('publish ',message.toString())
+        await Publisher.publish(message.toString());
       }
     });
 
+    console.log('Publisher done...');
+    
+    return new Publisher();
   }
 
-  async publish(topic: string) {
+  static async publish(topic: string) {
     // dequeue message
-    const messageQueue: Message = await this.queueManager.dequeueMessage(topic);
+    const messageQueue: Message = await Publisher.queueManager.dequeueMessage(topic);
+    console.log("messageQueue", messageQueue);
     // send message
-    this.client.publish(topic, JSON.stringify(messageQueue));
+    Publisher.client.publish(topic, JSON.stringify(messageQueue));
       
-    const timer = setTimeout(function () {
+    const timer = setTimeout(async () => {
       // acknowledge message or requeue
-      const msedb: Message = (this.DatabaseService.getMessageById(messageQueue.id))[0]
+      console.log(Publisher.dbService);
+      const msedb: Message =  (await Publisher.dbService.getMessageById(messageQueue._id))
+      console.log("msedb", msedb);
       if( !msedb.acknowledged ){
-          this.queueManager.requeueMessage(msedb);
-        }
+        Publisher.queueManager.requeueMessage(msedb);
+      }
         
       }, 1000);
     
   }
 
   // 
-  listenAcknowledgements() {
+  static async listenAcknowledgements() {
     
-    this.client.on('message', async (topic, message) => {
+    await Publisher.client.on('message', async (topic, message) => {
       
       if (topic === "acknowledged") {
         const MessageJson: MessageAck = JSON.parse(message.toString());
-        await this.dbService.updateMessage(MessageJson.messageId, { acknowledged: true });
+        await Publisher.dbService.updateMessage(new ObjectId(MessageJson.messageId), { acknowledged: true });
       }
       
     });
