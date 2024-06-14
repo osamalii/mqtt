@@ -6,7 +6,9 @@ import { DatabaseService } from './DatabaseService';
 import { Publisher } from './Publisher';
 import * as mqtt from "async-mqtt"
 
-import demo from "./demo";
+import demo1 from "./demo3";
+import demo2 from "./demo2";
+import demo3 from "./demo3";
 
 (async () => {
     try {
@@ -33,8 +35,9 @@ import demo from "./demo";
 
         const publisher = await Publisher.manageClientRequest(dbService, queueManager, MqttClient);
         const consumer = await Consumer.managePublishRequests(queueManager, MqttClient);
-
-        await demo(MqttClient);
+        //await demo1(MqttClient);
+        //await demo2(MqttClient);
+        await demo3(MqttClient);
 
         console.log('_______main.ts ends here_______');
     } catch (error) {

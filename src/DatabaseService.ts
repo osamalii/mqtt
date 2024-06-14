@@ -21,6 +21,8 @@ export class DatabaseService {
       await DatabaseService.client.connect();
       DatabaseService.db = DatabaseService.client.db(dbName);
       DatabaseService.messagesCollection = DatabaseService.db.collection('messages');
+      
+      await DatabaseService.messagesCollection.deleteMany({});
 
     } catch (error) {
       console.error(`Error in connectAndInitialize: ${error}`);
@@ -36,15 +38,16 @@ export class DatabaseService {
   }
 
   async updateMessage(id: ObjectId, message: Partial<Message>) {
+
     await DatabaseService.messagesCollection.updateOne(
       { _id: id },
       { $set: message }
     );
   }
 
-  async getOldestMessageByTopic(topic: string): Promise<Message | any> {
+  async getOldestMessageByTopic(topic: string, options: Partial<Message> = {}): Promise<Message | any> {
     return await DatabaseService.messagesCollection.findOne(
-      { topic, acknowledged: false, sent: false },
+      { topic, acknowledged: false, ...options }, // , sent: true,
       { sort: { timestamp: 1 } }
     );
   }

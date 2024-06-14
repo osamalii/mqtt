@@ -8,10 +8,13 @@ export type Message = {
     acknowledged: boolean;
     sent: boolean;
 }
-
+export type d={
+    consumerId: string;
+    message:Message;};
 
 export type MessageAck = {
-    messageId: string;
+    messageId: string | ObjectId;
+    consumerId: string;
 }
 
 

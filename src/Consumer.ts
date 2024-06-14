@@ -20,7 +20,7 @@ export class Consumer {
 
     await client.on('message', async (topic: ManagingTopics, message: string) => {
         try {
-          console.log('Consumer.ts received message for topic:', topic);
+          //console.log('Consumer.ts received message for topic:', topic);
           if (topic === 'PublishMessage') {
             console.log('Consumer.ts received message:', message.toString());
             const messageJson: PublishMessage = JSON.parse(message.toString());

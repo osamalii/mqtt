@@ -4,6 +4,8 @@ import { QueueManager } from './QueueManager'
 import { MessageAck, Message } from '../index';
 import { ObjectId } from "mongodb";
 
+
+
 export class Publisher {
 
   private static dbService: DatabaseService;
@@ -23,10 +25,12 @@ export class Publisher {
     await Publisher.listenAcknowledgements();
     
     await Publisher.client.subscribe('requestTopic');
+    await Publisher.client.subscribe('acknowledged');
 
     await Publisher.client.on('message', async (topic, message) => {
       if (topic === 'requestTopic') {
         console.log('publish ',message.toString())
+        
         await Publisher.publish(message.toString());
       }
     });
@@ -36,23 +40,32 @@ export class Publisher {
     return new Publisher();
   }
 
-  static async publish(topic: string) {
+  static async publish(message: string) {
     // dequeue message
-    const messageQueue: Message = await Publisher.queueManager.dequeueMessage(topic);
+    
+    const topic =(JSON.parse(message)).topic
+    const id =(JSON.parse(message)).consumerId
+
+    const messageQueue: Message | null = await Publisher.queueManager.dequeueMessage(topic);
+    if (!messageQueue) {
+      console.log("no message available for the topic", topic);
+      return;
+    }
+
     console.log("messageQueue", messageQueue);
+    const data ={consumerId:id,message:messageQueue};
     // send message
-    Publisher.client.publish(topic, JSON.stringify(messageQueue));
+    Publisher.client.publish("response", JSON.stringify(data));
       
-    const timer = setTimeout(async () => {
+    setTimeout(async () => {
       // acknowledge message or requeue
-      console.log(Publisher.dbService);
       const msedb: Message =  (await Publisher.dbService.getMessageById(messageQueue._id))
       console.log("msedb", msedb);
       if( !msedb.acknowledged ){
-        Publisher.queueManager.requeueMessage(msedb);
+        await Publisher.queueManager.requeueMessage(msedb);
       }
         
-      }, 1000);
+      }, 2000);
     
   }
 
@@ -63,7 +76,9 @@ export class Publisher {
       
       if (topic === "acknowledged") {
         const MessageJson: MessageAck = JSON.parse(message.toString());
+        console.log("ack revieved for the message", MessageJson.messageId, 'from consumer', MessageJson.consumerId);
         await Publisher.dbService.updateMessage(new ObjectId(MessageJson.messageId), { acknowledged: true });
+
       }
       
     });
