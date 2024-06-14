@@ -1,3 +1,15 @@
+/*
+  This file contains the DatabaseService class, which is responsible for connecting to the MongoDB database and performing CRUD operations on the messages collection.
+  It uses the MongoDB Node.js driver to interact with the database.
+  The connectAndInitialize method establishes a connection to the database and initializes the messages collection.
+  The insertMessage method inserts a new message into the collection.
+  The updateMessage method updates an existing message in the collection.
+  The getOldestMessageByTopic method retrieves the oldest unacknowledged message for a given topic.
+  The getMessageById method retrieves a message by its ObjectId.
+  
+*/
+
+
 import { MongoClient, Db, Collection, ObjectId, ServerApiVersion } from 'mongodb';
 import { Message } from '../index';
 
@@ -10,6 +22,7 @@ export class DatabaseService {
 
   public static async connectAndInitialize(uri: string, dbName: string): Promise<DatabaseService> {
     try {
+
       DatabaseService.client = new MongoClient(uri, {
         serverApi: {
           version: ServerApiVersion.v1,
@@ -47,7 +60,7 @@ export class DatabaseService {
 
   async getOldestMessageByTopic(topic: string, options: Partial<Message> = {}): Promise<Message | any> {
     return await DatabaseService.messagesCollection.findOne(
-      { topic, acknowledged: false, ...options }, // , sent: true,
+      { topic, acknowledged: false, ...options },
       { sort: { timestamp: 1 } }
     );
   }

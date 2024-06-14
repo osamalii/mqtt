@@ -1,16 +1,28 @@
+    /* 
+    
+    Publisher class is responsible for listening to the client requests and publishing the messages back.
+    It listens to the requestTopic topic and sends the messages to the response topic.
+    It also listens to the acknowledged topic to update the message status in the database (To manage the queue).
+    It uses the DatabaseService and QueueManager classes to manage topics queues and the database.
+    It has a static method listenAcknowledgements to listen to the acknowledgements from the consumers.
+    It uses the Mutex class from the async-mutex library to manage the concurrency of the dequeueMessage method.
+
+    */
+
+
 import * as mqtt from "async-mqtt"
-import { DatabaseService } from './DatabaseService';
 import { QueueManager } from './QueueManager'
 import { MessageAck, Message } from '../index';
 import { ObjectId } from "mongodb";
+import { DatabaseService } from "./DatabaseService";
 
 
 
 export class Publisher {
 
-  private static dbService: DatabaseService;
   private static queueManager: QueueManager;
   private static client: mqtt.IMqttClient;
+  private static dbService: DatabaseService;
 
   constructor() {}
 

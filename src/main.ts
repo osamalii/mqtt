@@ -35,6 +35,8 @@ import demo3 from "./demo3";
 
         const publisher = await Publisher.manageClientRequest(dbService, queueManager, MqttClient);
         const consumer = await Consumer.managePublishRequests(queueManager, MqttClient);
+
+
         //await demo1(MqttClient);
         //await demo2(MqttClient);
         await demo3(MqttClient);

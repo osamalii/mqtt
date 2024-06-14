@@ -8,6 +8,7 @@ const demo = async (client: mqtt.IMqttClient) => {
   const consumer1 = async () => {
     await client.subscribe('response');
 
+    
     client.on('message', async (topic, message: string) => {
       const data: d= JSON.parse(message)
       if (topic === 'response' && data.consumerId == "1") {
